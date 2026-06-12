@@ -1,0 +1,9 @@
+{
+  "ssid": "ESP32-Ducky",   // Name of WiFi
+  "password": "ducky12345",  // Password of WiFi
+  "autoScript": "",   // Name of script run at startup, leave empty for none
+  "autoAttack": false,  // autoattack
+  "delay": 50,   // Default delay when theres no delay specified
+  "safeMode": false,  //safemode
+  "speedProfile": "normal"  // speed profile
+}

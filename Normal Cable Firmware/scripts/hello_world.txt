@@ -1,0 +1,7 @@
+REM Hello World Script
+REM This script demonstrates basic STRING and KEY commands
+
+DELAY 1000
+STRING Hello World!
+KEY ENTER
+DELAY 500

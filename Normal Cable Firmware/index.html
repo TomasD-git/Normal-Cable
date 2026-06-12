@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 Ducky Control</title>
+    <style>
+        :root {
+            --primary-dark: #1a0f0f;
+            --primary-darker: #0d0808;
+            --accent-red: #c41e3a;
+            --accent-red-dark: #8B1538;
+            --accent-red-bright: #e63946;
+            --text-light: #f5f1f0;
+            --text-muted: #a89a97;
+            --border-subtle: #332a28;
+            --success: #2ea84f;
+            --danger: #da3633;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: var(--primary-dark);
+            color: var(--text-light);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .wrapper {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 100vh;
+            gap: 1px;
+            background: var(--border-subtle);
+        }
+
+        .sidebar {
+            background: var(--primary-darker);
+            padding: 24px 16px;
+            overflow-y: auto;
+            border-right: 1px solid var(--border-subtle);
+        }
+
+        .sidebar-header {
+            margin-bottom: 24px;
+            border-bottom: 2px solid var(--accent-red);
+            padding-bottom: 16px;
+        }
+
+        .sidebar-title {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent-red);
+            margin-bottom: 4px;
+        }
+
+        .sidebar-subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .file-tree {
+            font-size: 13px;
+        }
+
+        .file-item {
+            padding: 10px 12px;
+            margin: 4px 0;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 2px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            user-select: none;
+        }
+
+        .file-item:hover {
+            background: rgba(196, 30, 58, 0.1);
+            border-left-color: var(--accent-red);
+        }
+
+        .file-item.active {
+            background: rgba(196, 30, 58, 0.15);
+            border-left-color: var(--accent-red);
+            color: var(--accent-red-bright);
+            font-weight: 600;
+        }
+
+        .file-icon {
+            font-size: 11px;
+            min-width: 16px;
+        }
+
+        .file-name {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .file-actions {
+            opacity: 0;
+            display: flex;
+            gap: 4px;
+            font-size: 11px;
+            transition: opacity 0.2s;
+        }
+
+        .file-item:hover .file-actions {
+            opacity: 1;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 2px;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            color: var(--accent-red);
+            background: rgba(196, 30, 58, 0.2);
+        }
+
+        .sidebar-actions {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            gap: 8px;
+        }
+
+        .main {
+            background: var(--primary-dark);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(135deg, rgba(196, 30, 58, 0.15) 0%, rgba(139, 21, 56, 0.08) 100%);
+            padding: 32px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .header-left h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            letter-spacing: -0.5px;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+        }
+
+        .status-card {
+            background: rgba(196, 30, 58, 0.08);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 12px 16px;
+        }
+
+        .status-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .status-value {
+            font-size: 14px;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--danger);
+        }
+
+        .indicator.active {
+            background: var(--success);
+            box-shadow: 0 0 8px var(--success);
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 32px;
+            overflow-y: auto;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 0;
+        }
+
+        .tab-btn {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            position: relative;
+            top: 1px;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-light);
+        }
+
+        .tab-btn.active {
+            color: var(--accent-red);
+            border-bottom-color: var(--accent-red);
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 3px;
+            height: 24px;
+            background: var(--accent-red);
+            border-radius: 1.5px;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert.success {
+            background: rgba(46, 168, 79, 0.15);
+            border: 1px solid rgba(46, 168, 79, 0.3);
+            color: #5ac372;
+        }
+
+        .alert.error {
+            background: rgba(218, 54, 51, 0.15);
+            border: 1px solid rgba(218, 54, 51, 0.3);
+            color: #ff6b6b;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            background: rgba(196, 30, 58, 0.05);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            color: var(--text-light);
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+            transition: all 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent-red);
+            background: rgba(196, 30, 58, 0.08);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 350px;
+            font-family: 'Fira Code', 'Courier New', monospace;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 0;
+        }
+
+        .checkbox-group input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--accent-red);
+        }
+
+        .checkbox-group label {
+            margin: 0;
+            font-size: 13px;
+            cursor: pointer;
+            text-transform: none;
+            letter-spacing: normal;
+            color: var(--text-light);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: var(--accent-red);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-red-bright);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: rgba(168, 154, 151, 0.2);
+            color: var(--text-muted);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(168, 154, 151, 0.3);
+            color: var(--text-light);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #2da448;
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #bf3230;
+            transform: translateY(-1px);
+        }
+
+        .btn.sm {
+            padding: 6px 10px;
+            font-size: 11px;
+        }
+
+        .scripts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .script-card {
+            background: rgba(196, 30, 58, 0.05);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .script-card:hover {
+            background: rgba(196, 30, 58, 0.1);
+            border-color: var(--accent-red);
+            transform: translateY(-2px);
+        }
+
+        .script-card.selected {
+            background: rgba(196, 30, 58, 0.15);
+            border-color: var(--accent-red);
+        }
+
+        .script-name {
+            font-weight: 600;
+            color: var(--text-light);
+            font-size: 13px;
+            word-break: break-word;
+        }
+
+        .script-meta {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .script-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .command-ref {
+            background: rgba(196, 30, 58, 0.05);
+            border-left: 2px solid var(--accent-red);
+            padding: 12px 16px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .command-ref code {
+            background: var(--primary-darker);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: var(--accent-red-bright);
+        }
+
+        .command-ref strong {
+            color: var(--accent-red);
+        }
+
+        @media (max-width: 1024px) {
+            .wrapper {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                display: none;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .header {
+                flex-direction: column;
+                padding: 20px;
+            }
+
+            .status-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .content-area {
+                padding: 16px;
+            }
+
+            .scripts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--primary-dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-subtle);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-red-dark);
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="sidebar">
+                <div class="sidebar-header">
+                <div class="sidebar-title">Scripts</div>
+                <div class="sidebar-subtitle">File browser</div>
+            </div>
+
+            <div class="file-tree" id="fileTree"></div>
+
+            <div class="sidebar-actions">
+                <button class="btn btn-primary sm" onclick="createFolder()" title="Create folder">New Folder</button>
+                <button class="btn btn-secondary sm" onclick="refreshFileTree()" title="Refresh">Refresh</button>
+            </div>
+        </div>
+
+        <div class="main">
+            <div class="header">
+                <div class="header-left">
+                    <h1>Ducky</h1>
+                </div>
+                <div class="status-grid">
+                    <div class="status-card">
+                        <div class="status-label">Status</div>
+                        <div class="status-value">
+                            <span class="indicator" id="statusIndicator"></span>
+                            <span id="statusText">Ready</span>
+                        </div>
+                    </div>
+                    <div class="status-card">
+                        <div class="status-label">Running</div>
+                        <div class="status-value" id="currentScript">—</div>
+                    </div>
+                    <div class="status-card">
+                        <div class="status-label">Uptime</div>
+                        <div class="status-value" id="uptime">0s</div>
+                    </div>
+                    <div class="status-card">
+                        <div class="status-label">Heap</div>
+                        <div class="status-value" id="freeHeap">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab('scripts')">Scripts</button>
+                    <button class="tab-btn" onclick="switchTab('editor')">Editor</button>
+                    <button class="tab-btn" onclick="switchTab('settings')">Settings</button>
+                    <button class="tab-btn" onclick="switchTab('help')">Commands</button>
+                    <button class="tab-btn" onclick="switchTab('log')">Log</button>
+                </div>
+
+                <div id="scripts" class="tab-panel active">
+                    <div class="section-title">All Scripts</div>
+                    <div id="alert-scripts" class="alert"></div>
+                    <div class="scripts-grid" id="scriptsList"></div>
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="switchTab('editor')">New Script</button>
+                        <button class="btn btn-secondary" onclick="loadScripts()">Refresh</button>
+                    </div>
+                </div>
+
+                <div id="editor" class="tab-panel">
+                    <div class="section-title">Script Editor</div>
+                    <div id="alert-editor" class="alert"></div>
+
+                    <div class="form-group">
+                        <label for="scriptName">Script Name</label>
+                        <input type="text" id="scriptName" placeholder="my_script.txt">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="scriptContent">Content</label>
+                        <textarea id="scriptContent" placeholder="STRING Hello World!&#10;DELAY 1000&#10;KEY ENTER"></textarea>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="saveScript()">Save</button>
+                        <button class="btn btn-danger" onclick="clearEditor()" style="background: rgba(218, 54, 51, 0.3); color: var(--danger);">Clear</button>
+                    </div>
+                </div>
+
+                <div id="settings" class="tab-panel">
+                    <div class="section-title">Device Settings</div>
+                    <div id="alert-settings" class="alert"></div>
+
+                    <div class="form-group">
+                        <label for="wifiSSID">WiFi SSID</label>
+                        <input type="text" id="wifiSSID">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="wifiPassword">WiFi Password</label>
+                        <input type="password" id="wifiPassword">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="delayMs">Key Delay (ms)</label>
+                        <input type="number" id="delayMs" min="1" max="1000">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="speedProfile">Speed Profile</label>
+                        <select id="speedProfile" style="width: 100%; padding: 10px 12px; background: rgba(196, 30, 58, 0.05); border: 1px solid var(--border-subtle); border-radius: 4px; color: var(--text-light); font-size: 13px;">
+                            <option value="slow">Slow (100ms)</option>
+                            <option value="normal" selected>Normal (50ms)</option>
+                            <option value="fast">Fast (25ms)</option>
+                            <option value="fastest">Fastest (5ms)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="safeMode">
+                            <label for="safeMode">Safe Mode (require confirmation)</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="autoAttack">
+                            <label for="autoAttack">Auto-attack on boot</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="autoScript">Auto-execute script (relative to /scripts/)</label>
+                        <input type="text" id="autoScript" placeholder="(folder/script.txt)">
+                        <div style="font-size:12px;color:var(--text-muted);margin-top:6px;">Examples: <em>autorun.txt</em> or <em>attacks/windows/login.txt</em></div>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-success" onclick="saveSettings()">Save</button>
+                        <button class="btn btn-secondary" onclick="loadSettings()">Reload</button>
+                    </div>
+                </div>
+
+                <div id="help" class="tab-panel">
+                    <div class="section-title">Command Reference</div>
+
+                    <div class="command-ref">
+                        <strong>STRING &lt;text&gt;</strong> - Type text
+                        <br/>Example: <code>STRING Hello World!</code>
+                    </div>
+
+                    <div class="command-ref">
+                        <strong>KEY &lt;name&gt;</strong> - Press key
+                        <br/>Example: <code>KEY ENTER</code> | <code>KEY TAB</code>
+                    </div>
+
+                    <div class="command-ref">
+                        <strong>DELAY &lt;ms&gt;</strong> - Wait milliseconds
+                        <br/>Example: <code>DELAY 1000</code> (default: 5000)
+                    </div>
+
+                    <div class="command-ref">
+                        <strong>PRESS &lt;mod&gt;+&lt;key&gt;</strong> - Modifier combo
+                        <br/>Example: <code>PRESS CTRL+C</code> | <code>PRESS WINDOWS+R</code>
+                    </div>
+
+                    <div class="command-ref">
+                        <strong>REPEAT &lt;n&gt;</strong> - Repeat next command n times
+                        <br/>Example: <code>REPEAT 5</code> then <code>STRING A</code> (types AAAAA)
+                    </div>
+
+                    <div class="command-ref">
+                        <strong>REM &lt;text&gt;</strong> - Comment
+                        <br/>Example: <code>REM This is a comment</code>
+                    </div>
+
+                    <div style="margin-top: 20px; padding: 16px; background: rgba(196, 30, 58, 0.1); border-radius: 4px;">
+                        <strong>Available Keys:</strong> ENTER, SPACE, TAB, BACKSPACE, DELETE, ESCAPE, HOME, END, UP, DOWN, LEFT, RIGHT, F1–F12, PAGEUP, PAGEDOWN, INSERT, CAPS, NUMLOCK, SCROLLLOCK, PRINTSCREEN, PAUSE
+                        <br/><br/>
+                        <strong>Modifiers:</strong> CTRL, SHIFT, ALT, WINDOWS, GUI
+                    </div>
+                </div>
+
+                <div id="log" class="tab-panel">
+                    <div class="section-title">Execution Log</div>
+                    <div id="alert-log" class="alert"></div>
+                    <div style="background: rgba(196, 30, 58, 0.05); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 16px; max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 12px;">
+                        <div id="logContent" style="color: var(--text-muted);">No executions logged yet</div>
+                    </div>
+                    <div class="button-group" style="margin-top: 16px;">
+                        <button class="btn btn-secondary" onclick="loadLog()">Refresh Log</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.protocol === 'file:' ? 'http://192.168.1.1' : '';
+        let currentScript = null;
+
+        async function testConnection() {
+            try {
+                const response = await fetch(`${API_BASE}/api/ping`, { 
+                    method: 'GET',
+                    mode: window.location.protocol === 'file:' ? 'cors' : 'same-origin'
+                });
+                if (response.ok) {
+                    console.log('Device accessible:', await response.json());
+                    return true;
+                } else {
+                    console.error('Device responded with:', response.status);
+                    return false;
+                }
+            } catch (err) {
+                console.error('Connection failed:', err.message);
+                console.error('Trying to reach:', `${API_BASE}/api/ping`);
+                console.error('API_BASE is:', API_BASE || '(empty - using relative URLs)');
+                return false;
+            }
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function showAlert(tabId, message, type = 'success') {
+            const alertDiv = document.getElementById(`alert-${tabId}`);
+            alertDiv.textContent = message;
+            alertDiv.className = `alert show ${type}`;
+            setTimeout(() => alertDiv.classList.remove('show'), 4000);
+        }
+
+        function updateStatus() {
+            fetch(`${API_BASE}/api/status`)
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('statusIndicator').className = 
+                        `indicator ${data.running ? 'active' : ''}`;
+                    document.getElementById('statusText').textContent = 
+                        data.running ? 'Executing' : 'Ready';
+                    document.getElementById('currentScript').textContent = 
+                        data.currentScript || '—';
+                    document.getElementById('uptime').textContent = 
+                        `${Math.floor(data.uptime)}s`;
+                    document.getElementById('freeHeap').textContent = 
+                        `${(data.freeHeap / 1024).toFixed(1)}KB`;
+                })
+                .catch(err => console.log('Status update error'));
+        }
+
+        function loadScripts() {
+            fetch(`${API_BASE}/api/scripts`)
+                .then(r => {
+                    if (!r.ok) throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+                    return r.json();
+                })
+                .then(data => {
+                    const list = document.getElementById('scriptsList');
+                    list.innerHTML = '';
+                    if (data.scripts.length === 0) {
+                        list.innerHTML = '<p style="grid-column: 1/-1; color: var(--text-muted); text-align: center; padding: 40px;">No scripts yet. Create one to get started.</p>';
+                        return;
+                    }
+                    data.scripts.forEach(script => {
+                        const card = document.createElement('div');
+                        card.className = `script-card ${currentScript === script ? 'selected' : ''}`;
+                        card.innerHTML = `
+                            <div class="script-name">${script}</div>
+                            <div class="script-meta">Ready</div>
+                            <div class="script-actions">
+                                <button class="btn btn-primary sm" onclick="editScript('${encodeURIComponent(script)}')">Edit</button>
+                                <button class="btn btn-success sm" onclick="runScript('${encodeURIComponent(script)}')">Run</button>
+                                <button class="btn btn-danger sm" onclick="deleteScriptPermanent('${encodeURIComponent(script)}')">Delete</button>
+                            </div>
+                        `;
+                        list.appendChild(card);
+                    });
+                })
+                .catch(err => {
+                    console.error('loadScripts error:', err);
+                    showAlert('scripts', `Failed to load scripts: ${err.message}`, 'error');
+                });
+        }
+
+        function refreshFileTree() {
+            fetch(`${API_BASE}/api/scripts`)
+                .then(r => {
+                    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                    return r.json();
+                })
+                .then(data => {
+                    const tree = document.getElementById('fileTree');
+                    tree.innerHTML = '';
+                    data.scripts.forEach(script => {
+                        const item = document.createElement('div');
+                        item.className = `file-item ${currentScript === script ? 'active' : ''}`;
+                        item.innerHTML = `
+                            <span class="file-icon">FILE</span>
+                            <span class="file-name">${script}</span>
+                            <div class="file-actions">
+                                <button class="action-btn" onclick="editScript('${encodeURIComponent(script)}')" title="Edit">Edit</button>
+                                <button class="action-btn" onclick="runScript('${encodeURIComponent(script)}')" title="Run">Run</button>
+                                <button class="action-btn" onclick="deleteScriptPermanent('${encodeURIComponent(script)}')" title="Delete">Delete</button>
+                            </div>
+                        `;
+                        item.onclick = (e) => {
+                            if (!e.target.classList.contains('action-btn')) {
+                                editScript(script);
+                            }
+                        };
+                        tree.appendChild(item);
+                    });
+                })
+                .catch(err => console.log('Failed to load file tree:', err.message));
+        }
+
+        function editScript(name) {
+            name = decodeURIComponent(name);
+            currentScript = name;
+            const encodedName = encodeURIComponent(name);
+            fetch(`${API_BASE}/api/scripts/get?name=${encodedName}`)
+                .then(r => {
+                    if (!r.ok) throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+                    return r.json();
+                })
+                .then(data => {
+                    document.getElementById('scriptName').value = name;
+                    document.getElementById('scriptContent').value = data.content;
+                    switchTab('editor');
+                    refreshFileTree();
+                    loadScripts();
+                })
+                .catch(err => {
+                    console.error('editScript error:', err);
+                    showAlert('editor', `Failed to load script: ${err.message}`, 'error');
+                });
+        }
+
+        function saveScript() {
+            const name = document.getElementById('scriptName').value.trim();
+            const content = document.getElementById('scriptContent').value;
+
+            if (!name) {
+                showAlert('editor', 'Please enter a script name', 'error');
+                return;
+            }
+
+            if (!name.endsWith('.txt')) {
+                document.getElementById('scriptName').value = name + '.txt';
+            }
+
+            const formData = new URLSearchParams();
+            formData.append('name', name.endsWith('.txt') ? name : name + '.txt');
+            formData.append('content', content);
+
+            fetch(`${API_BASE}/api/scripts/save`, {
+                method: 'POST',
+                body: formData,
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+            })
+                .then(r => {
+                    if (!r.ok) throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+                    return r.json();
+                })
+                .then(data => {
+                    showAlert('editor', 'Script saved');
+                    clearEditor();
+                    loadScripts();
+                    refreshFileTree();
+                })
+                .catch(err => {
+                    console.error('saveScript error:', err);
+                    showAlert('editor', `Failed to save script: ${err.message}`, 'error');
+                });
+        }
+
+        function runScript(name) {
+            name = decodeURIComponent(name);
+            const formData = new URLSearchParams();
+            formData.append('name', name);
+
+            fetch(`${API_BASE}/api/scripts/run`, {
+                method: 'POST',
+                body: formData,
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+            })
+                .then(r => {
+                    if (!r.ok) throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+                    return r.json();
+                })
+                .then(data => {
+                    showAlert('scripts', `Executing: ${name}`);
+                    setTimeout(updateStatus, 100);
+                })
+                .catch(err => {
+                    console.error('runScript error:', err);
+                    showAlert('scripts', `Failed to run script: ${err.message}`, 'error');
+                });
+        }
+
+        function deleteScriptPermanent(name) {
+            name = decodeURIComponent(name);
+            if (!confirm(`Permanently delete "${name}"? This cannot be undone.`)) return;
+
+            const formData = new URLSearchParams();
+            formData.append('name', name);
+
+            fetch(`${API_BASE}/api/scripts/delete`, {
+                method: 'POST',
+                body: formData,
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+            })
+                .then(r => {
+                    if (!r.ok) throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+                    return r.json();
+                })
+                .then(data => {
+                    showAlert('scripts', 'Script deleted permanently');
+                    if (currentScript === name) {
+                        clearEditor();
+                        currentScript = null;
+                    }
+                    loadScripts();
+                    refreshFileTree();
+                })
+                .catch(err => {
+                    console.error('deleteScript error:', err);
+                    showAlert('scripts', `Failed to delete script: ${err.message}`, 'error');
+                });
+        }
+
+        function createFolder() {
+            const folderName = prompt('Folder name:');
+            if (!folderName) return;
+            showAlert('scripts', 'Folder creation coming soon', 'error');
+            
+        }
+
+        function clearEditor() {
+            document.getElementById('scriptName').value = '';
+            document.getElementById('scriptContent').value = '';
+            currentScript = null;
+            refreshFileTree();
+        }
+
+        function loadSettings() {
+            fetch(`${API_BASE}/api/settings`)
+                .then(r => {
+                    if (!r.ok) throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+                    return r.json();
+                })
+                .then(data => {
+                    document.getElementById('wifiSSID').value = data.ssid;
+                    document.getElementById('wifiPassword').value = data.password;
+                    document.getElementById('delayMs').value = data.delay;
+                    document.getElementById('autoAttack').checked = data.autoAttack;
+                    document.getElementById('autoScript').value = data.autoScript;
+                    document.getElementById('safeMode').checked = data.safeMode || false;
+                    document.getElementById('speedProfile').value = data.speedProfile || 'normal';
+                })
+                .catch(err => {
+                    console.error('loadSettings error:', err);
+                    showAlert('settings', `Failed to load settings: ${err.message}`, 'error');
+                });
+        }
+
+        function saveSettings() {
+            const formData = new URLSearchParams();
+            formData.append('ssid', document.getElementById('wifiSSID').value);
+            formData.append('password', document.getElementById('wifiPassword').value);
+            formData.append('delay', document.getElementById('delayMs').value);
+            formData.append('autoAttack', document.getElementById('autoAttack').checked);
+            formData.append('autoScript', document.getElementById('autoScript').value);
+            formData.append('safeMode', document.getElementById('safeMode').checked);
+            formData.append('speedProfile', document.getElementById('speedProfile').value);
+
+            fetch(`${API_BASE}/api/settings`, {
+                method: 'POST',
+                body: formData,
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+            })
+                .then(r => {
+                    if (!r.ok) throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+                    return r.json();
+                })
+                .then(data => {
+                    showAlert('settings', 'Settings saved and updated');
+                })
+                .catch(err => {
+                    console.error('saveSettings error:', err);
+                    showAlert('settings', `Failed to save settings: ${err.message}`, 'error');
+                });
+        }
+
+        function loadLog() {
+            fetch(`${API_BASE}/api/log`)
+                .then(r => {
+                    if (!r.ok) throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+                    return r.json();
+                })
+                .then(data => {
+                    const logContent = document.getElementById('logContent');
+                    if (!data.logs || data.logs.length === 0) {
+                        logContent.textContent = 'No executions logged yet';
+                        return;
+                    }
+                    logContent.innerHTML = data.logs.map(log => `<div>${log}</div>`).join('');
+                })
+                .catch(err => {
+                    console.error('loadLog error:', err);
+                    showAlert('log', `Failed to load log: ${err.message}`, 'error');
+                });
+        }
+
+        window.addEventListener('load', () => {
+            console.log('Testing device connection...');
+            testConnection().then(connected => {
+                if (connected) {
+                    console.log('Connected. Loading data...');
+                } else {
+                    console.warn('Device not accessible. Check WiFi connection and IP address.');
+                    showAlert('scripts', 'Device not accessible. Make sure you\'re connected to "ESP32-Ducky" network', 'error');
+                }
+            });
+            loadScripts();
+            refreshFileTree();
+            loadSettings();
+            loadLog();
+            updateStatus();
+            setInterval(updateStatus, 1000);
+        });
+    </script>
+</body>
+</html>

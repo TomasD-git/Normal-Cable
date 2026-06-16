@@ -9,7 +9,45 @@ Rubber ducky hidden inside a standard cable
 **3.3V LDO**  
 
 
-### **CAD will be made once i get all parts so i can meassure them**  
+### **CAD must be slightly modified see instructions**  
+
+<details>
+<summary>Instructions</summary>
+  
+1. **Buy all parts:**  
+   Either PCBA, or pcb with stencil and parts from lcsc, files for both options are found in production.  
+
+2. **Modify CAD**  
+   Get ruler and meassure diameter of the cable and make that hole at ends of both parts of case.  
+
+3. **Solder cable pads:**  
+   Solder all wires of cable to marked pads, same colour wires must be connected to same pads on both sides.   
+
+4. **Assemble:**  
+   Glue both parts together.  
+
+5. **Flash**  
+   Short 'C' Marked pads with 3.3V, this makes your computer talk with esp instead of other end of cable(Must be shorted while flashed).  
+   
+   <img width="313" height="268" alt="image" src="https://github.com/user-attachments/assets/4b39b44e-24b0-492e-88a9-bbdeefa48b42" />  
+   
+   Plug USB-C side and flash.  
+
+   If needed RST and BOOT are marked with silkscreen if needed:  
+   
+   <img width="530" height="500" alt="image" src="https://github.com/user-attachments/assets/a3ad938a-9083-4b83-9f7d-2b3f5d40b497" />  
+
+
+
+   
+
+
+
+
+
+
+  
+</details>
 
 <details>
 <summary>BOM</summary>

@@ -4,7 +4,7 @@ Rubber ducky hidden inside a standard cable
 
 **Very small**  
 **Wifi + Bluetooth with antenna**  
-**32 Mbit flash**  
+**8MB flash**  
 **USB Data and Power passthrough**  
 **3.3V LDO**  
 
@@ -27,25 +27,10 @@ Rubber ducky hidden inside a standard cable
    Glue both parts together.  
 
 5. **Flash**  
-   Short 'C' Marked pads with 3.3V, this makes your computer talk with esp instead of other end of cable(Must be shorted while flashed).  
-   
-   <img width="313" height="268" alt="image" src="https://github.com/user-attachments/assets/4b39b44e-24b0-492e-88a9-bbdeefa48b42" />  
    
    Plug USB-C side and flash.  
 
-   If needed RST and BOOT are marked with silkscreen if needed:  
-   
-   <img width="530" height="500" alt="image" src="https://github.com/user-attachments/assets/a3ad938a-9083-4b83-9f7d-2b3f5d40b497" />  
-
-
-
-   
-
-
-
-
-
-
+   If needed RST is marked with silkscreen if needed:  
   
 </details>
 

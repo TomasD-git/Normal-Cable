@@ -35,6 +35,24 @@ Rubber ducky hidden inside a standard cable
 </details>
 
 <details>
+<summary>What has changed from v1</summary>
+  
+|V1|V2|
+|-|-|
+|Cheaper|Much more expensive|  
+|4 layer PCB|6 layer PCB with blind and buried vias|  
+|Bluetooth, Wifi|Bluetooth, Wifi|  
+|50 Characters/sec|500 Characters/sec|  
+|Max 100 Characters/sec|Max 1000 Characters/sec|  
+|Bigger PCB|Smaller PCB|  
+|Worse antenna range|Better antenna range|  
+|ESP-32 C6|ESP-32 S3 With native USB|  
+
+**max characters a second is the theoretical limit as each key needs pressed and released event so half of that is the actual speed.**   
+
+</details>
+
+<details>
 <summary>BOM</summary>
   
 | Name | Purpose | Quantity | Total Cost (USD) | Link | Distributor |

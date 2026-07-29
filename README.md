@@ -1,6 +1,7 @@
 # Normal-Cable
-Rubber ducky hidden inside a standard cable
-### Features:
+Rubber ducky hidden inside a standard cable which runs on ESP32 S3  
+
+### Features:  
 
 **Very small**  
 **Wifi + Bluetooth with antenna**  

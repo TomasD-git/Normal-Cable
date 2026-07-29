@@ -8,7 +8,9 @@ Rubber ducky hidden inside a standard cable
 **USB Data and Power passthrough**  
 **3.3V LDO**  
 
-
+<img width="844" height="672" alt="image" src="https://github.com/user-attachments/assets/360b8cb4-9719-455c-b9df-45121118fcde" />  
+<img width="927" height="594" alt="image" src="https://github.com/user-attachments/assets/a1f6917e-d0c6-454f-b41c-f5803734d566" />  
+  
 ### **CAD must be slightly modified see instructions**  
 
 <details>
@@ -50,6 +52,24 @@ Rubber ducky hidden inside a standard cable
 |ESP-32 C6|ESP-32 S3 With native USB|  
 
 **max characters a second is the theoretical limit as each key needs pressed and released event so half of that is the actual speed.**   
+
+</details>
+
+<details>
+<summary>Pictures</summary>
+  
+**Schematic:**  
+<img width="965" height="811" alt="image" src="https://github.com/user-attachments/assets/f462a83e-e455-4ce3-9601-7bcfdbb9efe6" />  
+
+**PCB:**  
+<img width="289" height="785" alt="image" src="https://github.com/user-attachments/assets/375b36c5-e000-4ee9-8e22-75599ae8cc38" />
+
+**CAD:**  
+<img width="896" height="451" alt="image" src="https://github.com/user-attachments/assets/4adf267b-bd2f-4b89-ac0e-04849215f0cf" />
+
+**CAD:**  
+<img width="644" height="529" alt="image" src="https://github.com/user-attachments/assets/76722541-5666-46c9-ba51-b89651aadb54" />
+
 
 </details>
 

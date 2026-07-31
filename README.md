@@ -1,4 +1,4 @@
-# Normal-Cable
+# Normal-Cable V2  
 Rubber ducky hidden inside a standard cable which runs on ESP32 S3  
 
 ### Features:  
